@@ -1,0 +1,193 @@
+{
+  "budgets": {
+    "firstFrameMs": 400,
+    "focusMoveP95Ms": 16,
+    "recordPushMaxFrames": 2
+  },
+  "legacy": {
+    "label": "legacy",
+    "route": "/screen/sports",
+    "gitRef": "49522fc6",
+    "udid": "emulator-5584",
+    "measuredAt": "2026-11-24T18:22:58.491Z",
+    "deviceProfile": {
+      "resolution": "1920x1080",
+      "density": "320 dpi",
+      "ramMb": 1972,
+      "cores": 4,
+      "cpuQuota": "200%"
+    },
+    "firstFrame": {
+      "routeToFirstFrameMs": 16.92,
+      "mountFrameMaxMs": 483.6,
+      "firstRouteFrameDurationMs": 16.92,
+      "mountFrameCount": 17,
+      "budgetMs": 400,
+      "pass": true
+    },
+    "focusMove": {
+      "steps": 16,
+      "stats": {
+        "count": 31,
+        "p50Ms": 16.89,
+        "p95Ms": 148.96,
+        "maxMs": 164.7,
+        "minMs": 5.12,
+        "meanMs": 40.42,
+        "jankCount": 20,
+        "jankRatio": 0.6452,
+        "durationsMs": [
+          16.86,
+          5.12,
+          7.71,
+          6.12,
+          16.86,
+          16.89,
+          16.85,
+          50.46,
+          39.42,
+          18.92,
+          81.82,
+          76.37,
+          148.96,
+          102.43,
+          108.04,
+          164.7,
+          100.21,
+          16.93,
+          16.83,
+          7.02,
+          5.32,
+          5.69,
+          7.19,
+          5.85,
+          7.14,
+          7.03,
+          6.8,
+          48.39,
+          38,
+          19.58,
+          83.48
+        ]
+      },
+      "budgetP95Ms": 16,
+      "pass": false
+    },
+    "recordPush": {
+      "kind": "legacy-sse",
+      "framesRendered": 0,
+      "stats": {
+        "count": 0,
+        "p50Ms": 0,
+        "p95Ms": 0,
+        "maxMs": 0,
+        "minMs": 0,
+        "meanMs": 0,
+        "jankCount": 0,
+        "jankRatio": 0,
+        "durationsMs": []
+      },
+      "budgetFrames": 2,
+      "passFrames": true,
+      "passReaderIsolation": true,
+      "pass": true
+    }
+  },
+  "document": {
+    "label": "document",
+    "route": "/screen/sports",
+    "gitRef": "b96ea78e",
+    "udid": "emulator-5584",
+    "measuredAt": "2026-11-24T18:23:21.345Z",
+    "deviceProfile": {
+      "resolution": "1920x1080",
+      "density": "320 dpi",
+      "ramMb": 1972,
+      "cores": 4,
+      "cpuQuota": "200%"
+    },
+    "firstFrame": {
+      "routeToFirstFrameMs": 16.96,
+      "mountFrameMaxMs": 342.67,
+      "firstRouteFrameDurationMs": 16.96,
+      "mountFrameCount": 18,
+      "budgetMs": 400,
+      "pass": true
+    },
+    "focusMove": {
+      "steps": 16,
+      "stats": {
+        "count": 29,
+        "p50Ms": 16.93,
+        "p95Ms": 88.41,
+        "maxMs": 90.72,
+        "minMs": 5.44,
+        "meanMs": 36.53,
+        "jankCount": 25,
+        "jankRatio": 0.8621,
+        "durationsMs": [
+          16.87,
+          16.83,
+          16.88,
+          17.07,
+          16.87,
+          16.9,
+          22.06,
+          19.32,
+          85.93,
+          77.09,
+          74.14,
+          88.41,
+          83.57,
+          75.44,
+          90.72,
+          8.55,
+          6.09,
+          16.87,
+          8.05,
+          16.83,
+          5.44,
+          16.87,
+          16.85,
+          16.85,
+          16.93,
+          58.44,
+          57.37,
+          24.11,
+          71.91
+        ]
+      },
+      "budgetP95Ms": 16,
+      "pass": false
+    },
+    "recordPush": {
+      "kind": "screen-record-stream",
+      "framesRendered": 0,
+      "stats": {
+        "count": 0,
+        "p50Ms": 0,
+        "p95Ms": 0,
+        "maxMs": 0,
+        "minMs": 0,
+        "meanMs": 0,
+        "jankCount": 0,
+        "jankRatio": 0,
+        "durationsMs": []
+      },
+      "readerAudit": {
+        "pushedRecordKey": "event:sports:sports:nfl-nyg-phi",
+        "totalCollectionItems": 33,
+        "actualReaderItems": 4,
+        "currentRootInvalidatedItems": 4,
+        "isolatedPerItemInvalidatedItems": 4,
+        "rootReadsTotalRecords": 0,
+        "isolatesToReadersOnly": true,
+        "rootCause": "Per-item ScopedRecordNode (ShelfBlock/GridBlock/MarqueeBlock) and per-node useScopedReads isolate live record pushes to only the items reading the pushed record."
+      },
+      "budgetFrames": 2,
+      "passFrames": true,
+      "passReaderIsolation": true,
+      "pass": true
+    }
+  }
+}
