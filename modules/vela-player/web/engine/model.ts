@@ -63,6 +63,7 @@ export interface OnDemandSource {
 }
 export interface PlaybackSession {
   onDemandSources?: OnDemandSource[];
+  startupFallbackSources?: OnDemandSource[];
   serverState?: 'ready' | 'playing' | 'paused' | 'recovering' | 'ended';
   id: string;
   mediaId: string;

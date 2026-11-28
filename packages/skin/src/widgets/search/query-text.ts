@@ -5,7 +5,10 @@
 // holds the first, which resets them. The field follows the store only when the query changes
 // from elsewhere (cleared, or set by another field).
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import { useHost } from '../../host';
+
+const WEB_QUERY_DELAY_MS = 100;
 
 export function useQueryText(): { text: string; change(text: string): void } {
   const host = useHost();
@@ -14,6 +17,9 @@ export function useQueryText(): { text: string; change(text: string): void } {
   // What this field has sent and the store has not echoed yet, oldest first. The store may echo
   // a burst late and one value at a time; any of them is this field's own, not a change.
   const pending = useRef<string[]>([]);
+  const publish = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  useEffect(() => () => clearTimeout(publish.current), []);
 
   useEffect(() => {
     const echoed = pending.current.indexOf(query);
@@ -22,15 +28,24 @@ export function useQueryText(): { text: string; change(text: string): void } {
       return;
     }
     pending.current = [];
+    clearTimeout(publish.current);
     setText(query);
   }, [query]);
 
   const { setQuery } = host;
   const change = useCallback(
     (next: string) => {
-      pending.current.push(next);
       setText(next);
-      setQuery(next);
+      const send = () => {
+        pending.current.push(next);
+        setQuery(next);
+      };
+      // A store update redraws the search route and shell. Give the web input a
+      // chance to commit a burst of native input events before that work starts.
+      if (Platform.OS === 'web') {
+        clearTimeout(publish.current);
+        publish.current = setTimeout(send, WEB_QUERY_DELAY_MS);
+      } else send();
     },
     [setQuery],
   );

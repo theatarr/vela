@@ -2,6 +2,7 @@ import { afterAll, afterEach, expect, test } from 'bun:test';
 import { createHostContext } from '../web/engine/host/context';
 import { requestSwitch } from '../web/engine/host/authorizations';
 import { checkWaiting } from '../web/engine/host/watchdog';
+import { recoverPlayback } from '../web/engine/host/recovery';
 import { PLAYING_SWITCH_DEADLINE_MS, SWITCH_DEADLINE_MS, switchWait } from '../web/engine/host/switch-wait';
 import type { HostContext } from '../web/engine/host/state';
 import type { EngineEvent, PlaybackSession, Source } from '../web/engine/model';
@@ -104,4 +105,23 @@ test('a switch that released its media still fails at the short deadline', () =>
   const errors = events.flatMap(e => e.type === 'error' ? [e.failure] : []);
   expect(errors.map(f => f.kind)).toEqual(['network']);
   expect(host.playback.status as string).toBe('failed');
+});
+
+test('a direct-play startup with no progress asks the broker for its transcode at the resume position', async () => {
+  const events: EngineEvent[] = [];
+  const host = switching(events);
+  events.length = 0;
+  host.session.pendingSwitch = undefined;
+  host.surface.video.removeAttribute('src');
+  Object.assign(host.surface.video, { readyState: 0 });
+  host.session.current = { ...session, startupFallbackSources: session.onDemandSources };
+  host.playback.resumePosition = 50;
+  host.playback.status = 'loading';
+  host.watchdog.everPlayed = false;
+  await recoverPlayback(host, new Error('Core startup made no byte, packet or PCM progress for 8 seconds'), host.session.controller.token());
+  expect(events.filter(e => e.type === 'error')).toEqual([]);
+  expect(events.filter(e => e.type === 'session-command')).toEqual([expect.objectContaining({
+    command: expect.objectContaining({ kind: 'switch', pathId: 'plex-hls', atSeconds: 50, sourceGeneration: 0, seekGeneration: 0 }),
+  })]);
+  expect(host.session.pendingSwitch).toMatchObject({ recovery: true });
 });

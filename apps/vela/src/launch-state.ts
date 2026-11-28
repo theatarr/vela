@@ -5,9 +5,9 @@ export function launchDelay(elapsed: number, still: boolean): number {
   return Math.max(0, (still ? 0 : LAUNCH_BUILD_MS) - elapsed);
 }
 export { searchlightGeometry } from '@vela/skin/src/widgets/common/searchlight-geometry';
-export function launchReady(phase: string, load: string, fonts: boolean, authRoute: boolean, docError: boolean, homeSlow = false): boolean {
+export function launchReady(phase: string, load: string, fonts: boolean, authRoute: boolean, docError: boolean, homeSlow = false, searching = false): boolean {
   return fonts && (docError || ((phase === 'signed-out' || phase === 'offline') && authRoute) ||
-    (phase === 'signed-in' && (load === 'ready' || load === 'failed' || homeSlow)));
+    (phase === 'signed-in' && (searching || load === 'ready' || load === 'failed' || homeSlow)));
 }
 
 /** The first completed load releases the route host. Subsequent loads keep it mounted and
