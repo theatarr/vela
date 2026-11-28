@@ -18,8 +18,17 @@ export function useQueryText(): { text: string; change(text: string): void } {
   // a burst late and one value at a time; any of them is this field's own, not a change.
   const pending = useRef<string[]>([]);
   const publish = useRef<ReturnType<typeof setTimeout>>(undefined);
+  // The web's held-back update, if any: sent when the pause ends, or at once if the field goes
+  // away first, so the last characters typed before leaving search still reach the store.
+  const held = useRef<(() => void) | undefined>(undefined);
+  const flush = useCallback(() => {
+    clearTimeout(publish.current);
+    const send = held.current;
+    held.current = undefined;
+    send?.();
+  }, []);
 
-  useEffect(() => () => clearTimeout(publish.current), []);
+  useEffect(() => flush, [flush]);
 
   useEffect(() => {
     const echoed = pending.current.indexOf(query);
@@ -29,6 +38,7 @@ export function useQueryText(): { text: string; change(text: string): void } {
     }
     pending.current = [];
     clearTimeout(publish.current);
+    held.current = undefined;
     setText(query);
   }, [query]);
 
@@ -44,10 +54,11 @@ export function useQueryText(): { text: string; change(text: string): void } {
       // chance to commit a burst of native input events before that work starts.
       if (Platform.OS === 'web') {
         clearTimeout(publish.current);
-        publish.current = setTimeout(send, WEB_QUERY_DELAY_MS);
+        held.current = send;
+        publish.current = setTimeout(flush, WEB_QUERY_DELAY_MS);
       } else send();
     },
-    [setQuery],
+    [setQuery, flush],
   );
   return { text, change };
 }
