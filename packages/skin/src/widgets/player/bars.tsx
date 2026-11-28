@@ -13,11 +13,11 @@ import { ChapterStrip } from './chapters';
 import { LiveDial, LiveMark, LiveMultiview, LiveStatusLine, LiveZap, type LiveWatch } from './live';
 import type { CommandInput, PlayerChromeState } from './context';
 import type { OverlaySwitch } from '../../surfaces/player';
-import type { PlayerLook } from './look';
+import { playerUsesHandheldGeometry, type PlayerLook } from './look';
 import { PHONE_CONTROL_GAP, PHONE_PLAY_WIDTH } from './phone-layout';
 import { MenuAction, MenuPanel } from './menu';
 import { AudioMenu, qualityMenuRows, SleepMenu, SpeedMenu, SubtitlesMenu, type MenuName } from './menus';
-import type { PlayerView } from './present';
+import { scrubberReach, type PlayerView } from './present';
 import { sameControls } from './steady-controls';
 import { Scrubber } from './scrubber';
 import { Volume } from './volume';
@@ -161,6 +161,7 @@ export const bottomFade = (look: PlayerLook) => look.small ? (look.short ? 48 : 
 export function BottomBar(props: BottomProps) {
   const { look, state, view, visible, blocked, opened, bleed } = props;
   const fade = bottomFade(look);
+  const reach = scrubberReach(look.tv, playerUsesHandheldGeometry());
   const shown = useMemo(() => shownStyle(look, visible, 18), [look, visible]);
   return (
     <Animated.View pointerEvents={visible ? 'box-none' : 'none'} style={shown}>
@@ -188,7 +189,15 @@ export function BottomBar(props: BottomProps) {
             <ChapterStrip look={look} view={view} disabled={blocked} onSeek={props.seek} />
           ) : null}
           {props.live.live ? (
-            <View style={{ alignItems: look.small || props.live.window?.seekable ? 'stretch' : 'flex-start', gap: look.size(10) }}>
+            <View
+              style={{
+                alignItems: look.small || props.live.window?.seekable ? 'stretch' : 'flex-start',
+                gap: look.size(10),
+                // The timeline wrapper starts 10 pt above the drawn row. This padding keeps it inside
+                // the live group even when it comes first.
+                ...(props.live.window?.seekable && reach.above ? { paddingTop: reach.above, marginTop: -reach.above } : {}),
+              }}
+            >
               <LiveDial channelId={props.live.channelId} small={look.small} still={look.still} />
               <LiveStatusLine look={look} watch={props.live} />
               {look.small && !props.live.window?.seekable && !props.live.archive && props.live.behind <= 0
@@ -207,8 +216,9 @@ export function BottomBar(props: BottomProps) {
 
 /** The timeline and the clock under it. */
 function Timeline({ look, state, view, blocked, seek, onActive, visible, reveal, stepFrom }: BottomProps) {
+  const reach = scrubberReach(look.tv, playerUsesHandheldGeometry());
   return (
-    <View>
+    <View style={reach.above ? { marginTop: -reach.above } : undefined}>
       <Scrubber
         look={look}
         view={view}
@@ -237,8 +247,9 @@ function LiveTimeline({ look, state, view, blocked, seek, onActive, visible, rev
   const span = Math.max(0, window.edge - window.start);
   const relative = { ...view, position: window.position - window.start, duration: span, buffered: [], chapters: [] };
   const startsAt = live.windowStartAt;
+  const reach = scrubberReach(look.tv, playerUsesHandheldGeometry());
   return (
-    <View testID="player-live-timeline">
+    <View testID="player-live-timeline" style={reach.above ? { marginTop: -reach.above } : undefined}>
       <Scrubber
         key={`${state.plan?.sessionId}:${state.plan?.sourceGeneration}`}
         look={look}

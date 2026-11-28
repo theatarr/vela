@@ -1,6 +1,7 @@
 import { expect, type Locator } from 'e2e';
 import { describe, test, type Browser } from '@e2e-dev/web';
-import { waitForVideoReady } from './player-ready';
+import { runningBrowserPage } from '../muted-browser';
+import { videoState, waitForVideoPlayback, waitForVideoReady } from './player-ready';
 
 async function seekFraction(scrubber: Locator, fraction: number) {
   const box = await scrubber.boundingBox();
@@ -141,6 +142,53 @@ describe('Film deterministic release gate', { session: 'mock-film' }, () => {
       await screen.getByRole('button', 'Close player').tap();
     } finally {
       await admin(browser, 'faults', { videoStartPreparing: 0 });
+    }
+  });
+
+  test('with a coarse pointer, mouse clicks just inside the top and bottom edges of the taller timeline target seek the film', async ({ app, browser, screen }) => {
+    await app.open('/vela/title/title-1-1');
+    await expect(screen.getByRole('heading', 'The Last Observatory')).toBeVisible({ timeout: 30_000 });
+    const page = runningBrowserPage(new URL(await browser.url()).origin);
+    // The browser reports a coarse pointer (a phone or tablet) while the flag is set.
+    await page.addInitScript(() => {
+      if (sessionStorage.getItem('vela-e2e-coarse') !== '1') return;
+      const matchMedia = window.matchMedia.bind(window);
+      window.matchMedia = query => {
+        const list = matchMedia(query);
+        if (/\(pointer:\s*coarse\)/.test(query)) Object.defineProperty(list, 'matches', { value: true });
+        return list;
+      };
+    });
+    await page.evaluate(() => sessionStorage.setItem('vela-e2e-coarse', '1'));
+    try {
+      await app.open('/vela/watch/title-1-1?positionSeconds=0');
+      expect(await browser.evaluate(() => window.matchMedia('(pointer: coarse)').matches)).toBe(true);
+      await waitForVideoPlayback(browser, screen);
+      // Paused, the controls stay up.
+      await screen.getByTestId('player-toggle').tap();
+      await expect(screen.getByTestId('player-toggle')).toHaveAttribute('aria-label', 'Play');
+      const scrubber = screen.getByTestId('player-scrub');
+      const duration = Number(await scrubber.getAttribute('aria-valuemax'));
+      expect(duration).toBeGreaterThan(60);
+      // The drawn row is 22 points; the target reaches 10 above it and 12 below. Click 1 point inside each edge.
+      const edges = [
+        { fraction: 0.3, y: (box: { y: number; height: number }) => box.y - 10 + 1 },
+        { fraction: 0.7, y: (box: { y: number; height: number }) => box.y + box.height + 12 - 1 },
+      ];
+      for (const edge of edges) {
+        const box = await scrubber.boundingBox();
+        expect(box).not.toBeNull();
+        expect(box!.height).toBe(22);
+        await page.mouse.click(box!.x + box!.width * edge.fraction, edge.y(box!));
+        // The slider shows the target at once; wait for the video itself to settle there.
+        await expect.poll(async () => {
+          const video = await videoState(browser);
+          return !video.seeking && Math.abs(video.position - duration * edge.fraction) < 3;
+        }, { timeout: 10_000 }).toBe(true);
+      }
+      await screen.getByRole('button', 'Close player').tap();
+    } finally {
+      await page.evaluate(() => sessionStorage.removeItem('vela-e2e-coarse'));
     }
   });
 });

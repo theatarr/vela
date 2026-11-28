@@ -13,8 +13,8 @@ import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import { Platform, Text, View, type GestureResponderEvent } from 'react-native';
 import { msg } from '@vela/core';
 import type { PlayerChromeState } from './context';
-import type { PlayerLook } from './look';
-import { bubbleLeft, timecode, type PlayerView } from './present';
+import { playerUsesHandheldGeometry, type PlayerLook } from './look';
+import { bubbleLeft, scrubberReach, timecode, type PlayerView } from './present';
 import { pressed, useRemote } from './remote';
 import { useFocusClaim } from '../common/focus-claim';
 
@@ -137,6 +137,10 @@ export function Scrubber({ look, view, disabled, onSeek, onActive, thumbnail, pr
   const bar = look.size(active || focused ? 6 : 4);
   const thumb = look.size(14);
   const height = look.size(look.tv ? 30 : 22);
+  // On a phone or touch screen the timeline takes touches beyond its drawn row (44 points in
+  // all, over the clock row below). Its bottom margin and its wrapper's top margin (in bars.tsx)
+  // keep the layout as it was, and the wrapper contains the whole target.
+  const reach = scrubberReach(look.tv, playerUsesHandheldGeometry());
   const still = preview !== null && thumbnail ? thumbnail(preview) : null;
   // The last frame drawn stays mounted (unseen) between previews, so its sheet, a large image, is
   // decoded once rather than each time the bubble comes up.
@@ -151,7 +155,11 @@ export function Scrubber({ look, view, disabled, onSeek, onActive, thumbnail, pr
         setTrackWidth(event.nativeEvent.layout.width);
         measure();
       }}
-      style={{ height, justifyContent: 'center' }}
+      style={{
+        height: height + reach.above + reach.below,
+        justifyContent: 'center',
+        ...(reach.above || reach.below ? { marginBottom: -reach.below, zIndex: 1 } : {}),
+      }}
       onStartShouldSetResponderCapture={() => !disabled && duration > 0}
       onMoveShouldSetResponderCapture={() => !disabled && duration > 0}
       onResponderTerminationRequest={() => false}
@@ -191,7 +199,7 @@ export function Scrubber({ look, view, disabled, onSeek, onActive, thumbnail, pr
             commit(target);
           }
         }}
-        style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, justifyContent: 'center' }}
+        style={{ position: 'absolute', left: 0, right: 0, top: reach.above, bottom: reach.below, justifyContent: 'center' }}
         {...keys}
       >
         <View style={{ height: bar, borderRadius: bar / 2, backgroundColor: live ? look.trackStrong : look.track, overflow: 'hidden' }}>
@@ -270,7 +278,7 @@ export function Scrubber({ look, view, disabled, onSeek, onActive, thumbnail, pr
           style={{
             position: 'absolute',
             // The live delay notice occupies the strip directly above the track.
-            bottom: height + look.size(live ? 38 : 8),
+            bottom: reach.below + height + look.size(live ? 38 : 8),
             // Centred over the target, but kept over the timeline near either end.
             left: bubbleLeft(previewFraction, trackWidth, bubbleWidth),
             width: bubbleWidth,

@@ -674,3 +674,9 @@ export function bubbleLeft(fraction: number, trackWidth: number, bubbleWidth: nu
   const centred = fraction * trackWidth - bubbleWidth / 2;
   return Math.max(0, Math.min(Math.max(0, trackWidth - bubbleWidth), centred));
 }
+
+/** How far the timeline takes touches above and below its drawn row: on a phone or touch screen,
+ * 10 points above and 12 below the 22-point row (44 in all); a mouse or a TV keeps the row. */
+export function scrubberReach(tv: boolean, handheld: boolean): { above: number; below: number } {
+  return !tv && handheld ? { above: 10, below: 12 } : { above: 0, below: 0 };
+}
