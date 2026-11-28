@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'bun:test';
-import { addressQuery, isSearchPlace, searchAddress } from '../../../apps/vela/src/search-address';
+import { addressQuery, isSearchPlace, returnSearchQuery, searchAddress } from '../../../apps/vela/src/search-address';
+
+test('the auth return route carries search before browser history reflects it', () => {
+  expect(returnSearchQuery('/?q=the+office#top')).toBe('the office');
+  expect(returnSearchQuery('/search?q=one%3Ftwo')).toBe('one?two');
+  expect(returnSearchQuery('/title/1?q=rain')).toBe('');
+  expect(returnSearchQuery('/#top?q=rain')).toBe('');
+});
 
 const at = (path: string) => {
   const url = new URL(path, 'https://vela.example');

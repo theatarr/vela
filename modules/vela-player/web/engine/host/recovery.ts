@@ -143,10 +143,22 @@ export async function recoverPlayback(context: HostContext, error: unknown, toke
       publishHostState(context);
       return;
     }
+    const session = context.session.current;
+    const currentSource = context.media.source;
+    const startupFallback = session?.serverControlled && !context.watchdog.everPlayed &&
+      currentSource?.strategy === 'direct' && currentSource.id === session.selectedSourceId
+      ? session.startupFallbackSources?.find(s => !context.recovery.attempted.has(s.id))
+      : undefined;
+    if (startupFallback) {
+      context.recovery.attempted.add(startupFallback.id);
+      requestSwitch(context, startupFallback, position, true);
+      return;
+    }
     const source = candidateSources(context).find(
       (s) =>
         !context.recovery.attempted.has(s.id) &&
         s.recoveryAllowed !== false &&
+        (!session?.serverControlled || s.boundaries?.some(at => at <= position)) &&
         s.timeline === context.media.source?.timeline &&
         s.edition === context.media.source?.edition &&
         (!context.tracks.audio || s.audioTrackId === context.tracks.audio),

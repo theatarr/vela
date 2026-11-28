@@ -620,7 +620,8 @@ function AppHost({ store, state, live, children }: AppHostProps) {
   return (
     <VelaContext.Provider value={value}>
       {Platform.OS === 'web' && <DocumentTitle pathname={pathname} />}
-      <LaunchGate ready={launchReady(state.auth.phase, state.home.load, fontsReady, offlineAccess(state, pathname), !!resolved.error, state.home.slow)}
+      <LaunchGate ready={launchReady(state.auth.phase, state.home.load, fontsReady, offlineAccess(state, pathname), !!resolved.error, state.home.slow,
+        Platform.OS === 'web' && (pathname === '/' || pathname === '/search') && !!state.search.query.trim())}
         brandingReady={state.appearance.load === 'ready' || state.appearance.load === 'failed'} branding={appearance?.branding}>
         <Previews store={store} state={state} onHome={pathname === '/' && !pickerOpen} heroIndex={view.heroIndex} still={view.still} searchFocused={view.flags.includes('search-focused')}>
           <WatchFeedbackProvider inTitle={pathname.startsWith('/title/')}>{children}</WatchFeedbackProvider>

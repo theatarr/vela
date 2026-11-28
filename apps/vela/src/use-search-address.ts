@@ -15,10 +15,13 @@ export function useSearchAddress(store: Store, query: string, pathname: string, 
 
   useEffect(() => {
     if (!web || !signedIn || adopted.current) return;
-    adopted.current = true;
     const carried = addressQuery(window.location, base());
+    // Sign-in settles before the router restores returnTo. Wait for a search address
+    // before allowing the store to write back to history.
+    if (carried === undefined) return;
+    adopted.current = true;
     if (carried && store.getState().search.query !== carried) store.search.setQuery(carried);
-  }, [web, signedIn, store]);
+  }, [web, signedIn, store, pathname]);
 
   useEffect(() => {
     if (!web || !signedIn) return;

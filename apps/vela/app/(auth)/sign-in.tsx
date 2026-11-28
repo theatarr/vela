@@ -4,10 +4,12 @@ import { isPlayableDownload } from '@vela/core';
 import { useVela as useSession, useVelaState } from '@vela/core/react';
 import { SignedOut } from '@vela/skin/src/widgets/auth';
 import { Redirect, useLocalSearchParams, type Href } from 'expo-router';
+import { useEffect } from 'react';
 import { router } from '../../src/router';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { useVela } from '../../src/vela';
 import { safeReturnTo } from '../../src/return-to';
+import { returnSearchQuery } from '../../src/search-address';
 
 export default function SignIn() {
   const session = useSession();
@@ -16,7 +18,14 @@ export default function SignIn() {
   const servers = useVelaState(s => s.servers);
   const app = useVela();
   const params = useLocalSearchParams<{ returnTo?: string | string[] }>();
-  if (auth.phase === 'signed-in') return <Redirect href={safeReturnTo(params.returnTo) as Href} />;
+  const returnTo = safeReturnTo(params.returnTo);
+  useEffect(() => {
+    if (Platform.OS !== 'web' || auth.phase !== 'signed-in') return;
+    // Expo's route can settle before the browser's history entry carries the query.
+    const query = returnSearchQuery(returnTo);
+    if (query && session.getState().search.query !== query) session.search.setQuery(query);
+  }, [auth.phase, returnTo, session]);
+  if (auth.phase === 'signed-in') return <Redirect href={returnTo as Href} />;
   const host = app.host('auth', 'auth');
   const route = app.doc?.routes.auth;
   if (!host || !route) return <View style={{ flex: 1 }} />;

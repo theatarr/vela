@@ -17,6 +17,8 @@ interface LaunchBranding { name?: string; wordmark?: { url: string; dark?: strin
 export function LaunchGate({ ready, brandingReady, branding, children }: { ready: boolean; brandingReady: boolean; branding?: LaunchBranding; children: ReactNode }) {
   const still = useReducedMotion();
   const [stage, setStage] = useState<LaunchStage>('intro');
+  const [armed, setArmed] = useState(false);
+  useEffect(() => { if (ready) setArmed(true); }, [ready]);
   const visible = stage !== 'done';
   const duration = still ? 160 : 420;
   return <View style={styles.root}>
@@ -25,7 +27,7 @@ export function LaunchGate({ ready, brandingReady, branding, children }: { ready
       style={[styles.root, { opacity: visible ? 0 : 1 }, stage === 'exit' && fade(false, duration)]}>
       {children}
     </Animated.View>
-    {visible && <LaunchCover ready={ready} still={still} brandingReady={brandingReady} branding={branding} exiting={stage === 'exit'} duration={duration}
+    {visible && <LaunchCover ready={armed} still={still} brandingReady={brandingReady} branding={branding} exiting={stage === 'exit'} duration={duration}
       onExit={() => setStage('exit')} onDone={() => setStage('done')} />}
   </View>;
 }

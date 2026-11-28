@@ -21,6 +21,11 @@ test('the full lock and final bulb finish before hand-off, even on a fast respon
   expect(launchDelay(6000, false)).toBe(0);
   expect(launchDelay(0, true)).toBe(0);
 });
+test('a signed-in search can draw while the unrelated home feed is pending', () => {
+  expect(launchReady('signed-in', 'loading', true, false, false, false, true)).toBe(true);
+  expect(launchReady('starting', 'loading', true, false, false, false, true)).toBe(false);
+  expect(launchReady('signed-in', 'loading', false, false, false, false, true)).toBe(false);
+});
 test('searchlight viewport and wordmark keep the approved phone and TV proportions', () => {
   const phone = searchlightGeometry(390, 844);
   expect(phone.markWidth).toBeCloseTo(163.8);

@@ -31,6 +31,14 @@ export function addressQuery(address: Address, base = ''): string | undefined {
   return new URLSearchParams(address.search).get('q') ?? '';
 }
 
+/** A sign-in return target is already app-relative and may arrive before history updates. */
+export function returnSearchQuery(href: string): string {
+  const target = href.split('#', 1)[0] ?? '';
+  const separator = target.indexOf('?');
+  if (separator < 0) return '';
+  return addressQuery({ pathname: target.slice(0, separator), search: target.slice(separator) }) ?? '';
+}
+
 /** The address that carries `query` in place of the current one (other parameters and the hash
  * kept), or undefined when the address already carries it or search does not draw here. */
 export function searchAddress(address: Address, query: string, base = ''): string | undefined {

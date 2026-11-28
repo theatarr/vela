@@ -1,7 +1,11 @@
 import { localMediaURL } from './local-media';
 import { codecFamily } from './video-info';
 import type { PlaybackPlan, PlaybackPath, PlayerObservation } from '../../../../packages/protocol/types';
-import type { PlaybackSession, Snapshot } from './model';
+import type { OnDemandSource, PlaybackSession, Snapshot } from './model';
+
+function brokerSwitch(path: PlaybackPath): OnDemandSource {
+  return { id: path.id, onDemand: true, delivery: path.transport, mime: path.mimeType, original: path.original };
+}
 /** Protocol paths contain server-qualified codec strings, never guessed capabilities. */
 /** The plan's media URLs may be relative to the server; `mediaBase` is that server's origin (the
  * page's own when it serves both, as Ether does at /vela). */
@@ -16,6 +20,10 @@ export function sessionFromPlan(plan: PlaybackPlan, mediaBase: string = location
   const selected = plan.paths.find((p) => p.id === plan.selectedPathId);
   if (!selected) throw new Error('Plan selected path is absent');
   const edition = selected.edition ?? '';
+  const sameSource = (path: PlaybackPath) => path.id !== selected.id &&
+    !!selected.sourceId && path.sourceId === selected.sourceId &&
+    !!selected.timelineId && path.timelineId === selected.timelineId &&
+    (path.edition ?? '') === edition;
   return {
     id: plan.sessionId,
     serverState: plan.state,
@@ -60,17 +68,13 @@ export function sessionFromPlan(plan: PlaybackPlan, mediaBase: string = location
       forced: t.forced,
       hearingImpaired: t.hearingImpaired,
     })),
-    onDemandSources: plan.paths
-      .filter(
-        (p) =>
-          p.readiness === 'on-demand' &&
-          !!p.sourceId &&
-          p.sourceId === selected.sourceId &&
-          !!p.timelineId &&
-          p.timelineId === selected.timelineId &&
-          (p.edition ?? '') === edition,
-      )
-      .map((p) => ({ id: p.id, onDemand: true, delivery: p.transport, mime: p.mimeType, original: p.original })),
+    onDemandSources: plan.paths.filter(p => p.readiness === 'on-demand' && sameSource(p)).map(brokerSwitch),
+    // A failed original has no running stream to splice. The broker can start its transcode
+    // at the requested position on the same source, even if a ready path has no splice point there.
+    startupFallbackSources: local || selected.kind !== 'direct' || selected.transport !== 'file' ? [] : plan.paths
+      .filter(p => p.kind === 'transcode' && p.transport === 'hls' &&
+        (p.readiness === 'on-demand' || p.readiness === 'ready') && sameSource(p))
+      .map(brokerSwitch),
     sources: plan.paths
       .filter(
         (p): p is PlaybackPath & { readiness: 'ready'; url: string } =>
